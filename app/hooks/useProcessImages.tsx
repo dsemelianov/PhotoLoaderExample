@@ -47,13 +47,13 @@ export function useProcessImages() {
 
   const getAssets = useCallback(
     async (cursor?: string) => {
+      console.log('getAssets for ' + cursor);
       const fetchedAssetsPage = await MediaLibrary.getAssetsAsync({
         mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video],
         ...(cursor ? {after: cursor} : {}),
       });
       const fetchedAssets = fetchedAssetsPage.assets;
       setTotalAssets(fetchedAssetsPage.totalCount);
-
       // Process assets in batches
       for (let i = 0; i < fetchedAssets.length; i += BATCH_SIZE) {
         const batch = fetchedAssets.slice(i, i + BATCH_SIZE);
@@ -62,9 +62,6 @@ export function useProcessImages() {
         } catch (e) {
           console.error(e);
         }
-        setProcessedAssets(
-          processedCount => (processedCount || 0) + batch.length,
-        );
       }
 
       if (fetchedAssetsPage.hasNextPage) {
