@@ -5,113 +5,113 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useCallback} from 'react';
 import {
+  FlatList,
+  ListRenderItemInfo,
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import {useProcessImages} from './app/hooks/useProcessImages';
+import GrantPermissions from './app/GrantPermissions';
+import * as Progress from 'react-native-progress';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const repeatedString = 'Scroll to test how response the UI is';
+const dummyDataList = new Array(1000)
+  .fill(null)
+  .map((_, index) => `${repeatedString} ${index}`);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+export function App(): React.JSX.Element {
+  const {
+    permissionResponse,
+    requestPermission,
+    rerun,
+    totalAssets,
+    processedAssets,
+    isSyncing,
+  } = useProcessImages();
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+  let syncProgress: number = 1;
+  if (processedAssets && totalAssets) {
+    syncProgress = processedAssets / totalAssets;
+  }
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+  const renderSyncProgress = useCallback(() => {
+    if (isSyncing) {
+      return (
+        <View style={styles.syncProgressContainer}>
+          <Progress.Bar progress={syncProgress} width={null} />
+          <Text style={styles.syncProgressText}>
+            {`Syncing ${processedAssets} of ${totalAssets} photos`}
+          </Text>
+          <Text style={[styles.syncProgressText, {marginTop: 8}]}>
+            {'Try scrolling the list below - it will be laggy :( '}
+          </Text>
         </View>
-      </ScrollView>
+      );
+    }
+
+    return (
+      <View style={styles.syncProgressContainer}>
+        <Progress.Bar progress={syncProgress} width={null} />
+        <Text style={styles.syncProgressText}>
+          {'Sync is finished. UI should be fine now.'}
+        </Text>
+        <TouchableOpacity
+          onPress={() => {
+            rerun();
+          }}
+          style={{
+            backgroundColor: 'blue',
+            marginTop: 8,
+            padding: 4,
+            borderRadius: 4,
+          }}>
+          <Text style={{color: 'white'}}>
+            Tap here to rerun sync and make the UI laggy again
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }, [isSyncing, processedAssets, rerun, syncProgress, totalAssets]);
+
+  const renderRow = useCallback((data: ListRenderItemInfo<string>) => {
+    return <Text key={data.index}>{data.item}</Text>;
+  }, []);
+
+  return (
+    <SafeAreaView style={{flex: 1}}>
+      <View style={{backgroundColor: 'white', flex: 1}}>
+        {permissionResponse?.status !== 'granted' ? (
+          <GrantPermissions requestPermission={requestPermission} />
+        ) : (
+          <>
+            {renderSyncProgress()}
+            <FlatList
+              data={dummyDataList}
+              style={{backgroundColor: 'white'}}
+              keyExtractor={(_, index) => `row-${index}`}
+              renderItem={renderRow}
+              showsVerticalScrollIndicator={false}
+              windowSize={2}
+            />
+          </>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  syncProgressContainer: {paddingHorizontal: 8, marginVertical: 8},
+  syncProgressText: {
+    fontWeight: '500',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
 
