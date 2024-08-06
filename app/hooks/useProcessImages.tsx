@@ -34,12 +34,13 @@ export function useProcessImages() {
 
       assetsWithInfo.forEach(_assetWithInfo => {
         try {
-          setProcessedAssets(v => {
-            return (v || 0) + 1;
-          });
         } catch (e) {
           console.error(e);
         }
+      });
+
+      setProcessedAssets(v => {
+        return (v || 0) + assetsWithInfo.length;
       });
     },
     [fetchAssetInfo],
@@ -83,7 +84,10 @@ export function useProcessImages() {
       }
       getAssets(cursor).then(nextCursor => {
         if (nextCursor) {
-          fetchAllAssets(nextCursor);
+          // Give the UI some breathing room
+          setTimeout(() => {
+            fetchAllAssets(nextCursor);
+          }, 50);
         }
       });
     },
@@ -97,12 +101,14 @@ export function useProcessImages() {
     fetchAllAssets(undefined);
   }, [permissionResponse, fetchAllAssets]);
 
+  const rerunSync = useCallback(async () => {
+    fetchAllAssets(undefined);
+  }, [fetchAllAssets]);
+
   return {
     permissionResponse,
     requestPermission,
-    rerun: () => {
-      fetchAllAssets(undefined);
-    },
+    rerunSync,
     totalAssets,
     processedAssets,
     isSyncing,

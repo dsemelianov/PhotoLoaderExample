@@ -1,10 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
 import React, {useCallback} from 'react';
 import {
   FlatList,
@@ -19,7 +12,7 @@ import {useProcessImages} from './app/hooks/useProcessImages';
 import GrantPermissions from './app/GrantPermissions';
 import * as Progress from 'react-native-progress';
 
-const repeatedString = 'Scroll to test how response the UI is';
+const repeatedString = 'Scroll to test how responsive the UI is';
 const dummyDataList = new Array(1000)
   .fill(null)
   .map((_, index) => `${repeatedString} ${index}`);
@@ -28,7 +21,7 @@ export function App(): React.JSX.Element {
   const {
     permissionResponse,
     requestPermission,
-    rerun,
+    rerunSync,
     totalAssets,
     processedAssets,
     isSyncing,
@@ -38,6 +31,8 @@ export function App(): React.JSX.Element {
   if (processedAssets && totalAssets) {
     syncProgress = processedAssets / totalAssets;
   }
+
+  console.log('RENDERING!');
 
   const renderSyncProgress = useCallback(() => {
     if (isSyncing) {
@@ -56,13 +51,12 @@ export function App(): React.JSX.Element {
 
     return (
       <View style={styles.syncProgressContainer}>
-        <Progress.Bar progress={syncProgress} width={null} />
         <Text style={styles.syncProgressText}>
           {'Sync is finished. UI should be fine now.'}
         </Text>
         <TouchableOpacity
           onPress={() => {
-            rerun();
+            rerunSync();
           }}
           style={{
             backgroundColor: 'blue',
@@ -76,7 +70,7 @@ export function App(): React.JSX.Element {
         </TouchableOpacity>
       </View>
     );
-  }, [isSyncing, processedAssets, rerun, syncProgress, totalAssets]);
+  }, [isSyncing, processedAssets, rerunSync, syncProgress, totalAssets]);
 
   const renderRow = useCallback((data: ListRenderItemInfo<string>) => {
     return <Text key={data.index}>{data.item}</Text>;
